@@ -52,7 +52,10 @@ def get_record_ip(config):
         response.raise_for_status()
         record = json.loads(response.text)
     except requests.exceptions.RequestException as e:
-        raise SystemExit(e)
+        if e.response.status_code == 404:
+            raise SystemExit("The A record in the DNS zone was not found.")
+        else:
+            raise SystemExit(e)
 
     return record['rrset_values'][0]
 
