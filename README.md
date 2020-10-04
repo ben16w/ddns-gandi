@@ -1,4 +1,4 @@
-# gandi-ddns
+# ddns-gandi
 
 ## About
 
