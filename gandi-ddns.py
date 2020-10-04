@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import requests
+from urllib.parse import urljoin
 import json
 import socket
 import sys
@@ -17,8 +18,9 @@ def modify_record_ip(ip_add, config):
 
     try:
         # Delete A record
-        url = "https://api.gandi.net/v5/livedns/domains/{}/records/{}/A".format(
-                config["domain"], config["a_name"])
+        endpoint = "domains/{}/records/{}/A".format(
+            config["domain"], config["a_name"])
+        url = urljoin(config['api'], endpoint)
         response = requests.request("DELETE", url, headers=headers)
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
@@ -26,8 +28,8 @@ def modify_record_ip(ip_add, config):
 
     try:
         # Create A record
-        url = "https://api.gandi.net/v5/livedns/domains/{}/records".format(
-            config["domain"])
+        endpoint = "domains/{}/records".format(config["domain"])
+        url = urljoin(config['api'], endpoint)
         payload = "{{\"rrset_name\":\"{}\",\"rrset_type\":\"A\",\"rrset_values\":[\"{}\"],\"rrset_ttl\":{}}}".format(
             config["a_name"], ip_add, config["ttl"])
         response = requests.request("POST", url, data=payload, headers=headers)
@@ -43,8 +45,9 @@ def get_record_ip(config):
 
     try:
         # Get Record
-        url = "https://api.gandi.net/v5/livedns/domains/{}/records/{}/A".format(
+        endpoint = "domains/{}/records/{}/A".format(
             config["domain"], config["a_name"])
+        url = urljoin(config['api'], endpoint)
         response = requests.request("GET", url, headers=headers)
         response.raise_for_status()
         record = json.loads(response.text)
@@ -84,9 +87,10 @@ if __name__ == "__main__":
     default_config = """{
         "apikey":"<CHANGE ME>",
         "domain":"<CHANGE ME>",
+        "host": "localhost",
         "a_name": "@",
         "ttl":900,
-        "host": "localhost"
+        "api": "https://api.gandi.net/v5/livedns/"
     }"""
 
     config_path = os.path.dirname(os.path.realpath(__file__)) + "/config.json"
