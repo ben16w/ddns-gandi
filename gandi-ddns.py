@@ -6,21 +6,25 @@ import socket
 import sys
 import os
 
+
 def modify_record_ip(ip_add, config):
     """ Change the zone record to the new IP """
 
     headers = {
         'authorization': 'Apikey {}'.format(config["apikey"]),
         'content-type': "application/json"
-        }
+    }
 
     # Delete A record
-    url = "https://api.gandi.net/v5/livedns/domains/{}/records/{}/A".format(config["domain"], config["a_name"])
+    url = "https://api.gandi.net/v5/livedns/domains/{}/records/{}/A".format(
+        config["domain"], config["a_name"])
     response = requests.request("DELETE", url, headers=headers)
 
     # Create A record
-    url = "https://api.gandi.net/v5/livedns/domains/{}/records".format(config["domain"])
-    payload = "{{\"rrset_name\":\"{}\",\"rrset_type\":\"A\",\"rrset_values\":[\"{}\"],\"rrset_ttl\":{}}}".format(config["a_name"], ip_add, config["ttl"])
+    url = "https://api.gandi.net/v5/livedns/domains/{}/records".format(
+        config["domain"])
+    payload = "{{\"rrset_name\":\"{}\",\"rrset_type\":\"A\",\"rrset_values\":[\"{}\"],\"rrset_ttl\":{}}}".format(
+        config["a_name"], ip_add, config["ttl"])
     response = requests.request("POST", url, data=payload, headers=headers)
 
 
@@ -30,7 +34,8 @@ def get_record_ip(config):
     headers = {'authorization': 'Apikey {}'.format(config["apikey"])}
 
     # Get Records
-    url = "https://api.gandi.net/v5/livedns/domains/{}/records".format(config["domain"])
+    url = "https://api.gandi.net/v5/livedns/domains/{}/records".format(
+        config["domain"])
     response = requests.request("GET", url, headers=headers)
     records = json.loads(response.text)
 
@@ -48,7 +53,7 @@ def hostname_to_ip():
         try:
             host_ip = requests.get('https://api.ipify.org').text
         except Exception:
-            print('Unable to external IP address.')
+            print('Unable to get external IP address.')
             sys.exit(2)
 
     return host_ip
@@ -67,6 +72,7 @@ def read_config(config_path):
 
 
 if __name__ == "__main__":
+
     default_config = """{
         "apikey":"<CHANGE ME>",
         "domain":"<CHANGE ME>",
@@ -79,15 +85,15 @@ if __name__ == "__main__":
 
     config = read_config(config_path)
     if not config:
-        sys.exit("please fill in the 'config.txt' file")
+        sys.exit("Please fill in the 'config.json' file.")
 
     public_ip = hostname_to_ip()
     record_ip = get_record_ip(config)
 
     if record_ip != public_ip:
-        print('DNS Mistmatch detected: A-record: ', record_ip, ' WAN IP: ', public_ip)
+        print('DNS A-record mistmatch found: A-record: ',
+              record_ip, ' WAN IP: ', public_ip)
         modify_record_ip(public_ip, config)
-        print('DNS A record update complete - set to ', public_ip)
+        print('DNS A record update complete. Now set to ', public_ip)
     else:
-        print("No DNS Mistmatch detected.")
-
+        print("No DNS Mistmatch detected, nothing to do. WAN IP: ", public_ip)
