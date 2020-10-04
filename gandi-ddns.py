@@ -15,17 +15,25 @@ def modify_record_ip(ip_add, config):
         'content-type': "application/json"
     }
 
-    # Delete A record
-    url = "https://api.gandi.net/v5/livedns/domains/{}/records/{}/A".format(
-        config["domain"], config["a_name"])
-    response = requests.request("DELETE", url, headers=headers)
+    try:
+        # Delete A record
+        url = "https://api.gandi.net/v5/livedns/domains/{}/records/{}/A".format(
+                config["domain"], config["a_name"])
+        response = requests.request("DELETE", url, headers=headers)
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        raise SystemExit(e)
 
-    # Create A record
-    url = "https://api.gandi.net/v5/livedns/domains/{}/records".format(
-        config["domain"])
-    payload = "{{\"rrset_name\":\"{}\",\"rrset_type\":\"A\",\"rrset_values\":[\"{}\"],\"rrset_ttl\":{}}}".format(
-        config["a_name"], ip_add, config["ttl"])
-    response = requests.request("POST", url, data=payload, headers=headers)
+    try:
+        # Create A record
+        url = "https://api.gandi.net/v5/livedns/domains/{}/records".format(
+            config["domain"])
+        payload = "{{\"rrset_name\":\"{}\",\"rrset_type\":\"A\",\"rrset_values\":[\"{}\"],\"rrset_ttl\":{}}}".format(
+            config["a_name"], ip_add, config["ttl"])
+        response = requests.request("POST", url, data=payload, headers=headers)
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        raise SystemExit(e)
 
 
 def get_record_ip(config):
@@ -33,16 +41,17 @@ def get_record_ip(config):
 
     headers = {'authorization': 'Apikey {}'.format(config["apikey"])}
 
-    # Get Records
-    url = "https://api.gandi.net/v5/livedns/domains/{}/records".format(
-        config["domain"])
-    response = requests.request("GET", url, headers=headers)
-    records = json.loads(response.text)
+    try:
+        # Get Record
+        url = "https://api.gandi.net/v5/livedns/domains/{}/records/{}/A".format(
+            config["domain"], config["a_name"])
+        response = requests.request("GET", url, headers=headers)
+        response.raise_for_status()
+        record = json.loads(response.text)
+    except requests.exceptions.RequestException as e:
+        raise SystemExit(e)
 
-    for record in records:
-        if record['rrset_name'] == config["a_name"] and record['rrset_type'] == 'A':
-            return record['rrset_values'][0]
-    # Throw error
+    return record['rrset_values'][0]
 
 
 def hostname_to_ip():
@@ -52,9 +61,8 @@ def hostname_to_ip():
     if host_ip == '127.0.0.1':
         try:
             host_ip = requests.get('https://api.ipify.org').text
-        except Exception:
-            print('Unable to get external IP address.')
-            sys.exit(2)
+        except Exception as e:
+            raise SystemExit(e)
 
     return host_ip
 
